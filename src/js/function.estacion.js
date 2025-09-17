@@ -108,7 +108,6 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 tiposPagosContainer.style.display = 'none'
             }
-
             // Actualizar Tipos de Vehículo y mostrar si hay datos
             tiposVehiculosList.innerHTML = ''
             if (resumen.tiposVehiculo && resumen.tiposVehiculo.length > 0) {
@@ -125,7 +124,6 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 tiposVehiculosContainer.style.display = 'none'
             }
-
             // Ocultar o mostrar los botones si no hay ventas
             if (resumen.total_ventas === 0) {
                 btnCerrarDia.style.display = 'none'
@@ -181,7 +179,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const tipoPagoId = selectTipoPago.value
         const simbolo = tipoPagoId === '1' ? '$' : 'BS'
         const fecha = new Date().toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' })
-
         const previewText = `
         ====== ESTACIÓN DE SERVICIO ======
 
@@ -584,7 +581,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         const response = await fetch(base_url + 'Estacion/cerrarTurnoPendiente', {
                             method: 'POST',
                             headers: {'Content-Type': 'application/json'},
-                            body: JSON.stringify({ fecha_cierre: fechaCierre })
+                            body: JSON.stringify({userId: idUser, fecha_cierre: fechaCierre })
                         })
                         const result = await response.json()
                         if (result.success) {

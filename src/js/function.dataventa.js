@@ -48,8 +48,16 @@ document.addEventListener('DOMContentLoaded', async function() {
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">${parseFloat(cierre.debito_bs).toFixed(2)} Bs</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">${parseFloat(cierre.total_bs).toFixed(2)} Bs</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">${parseFloat(cierre.total_litros_vendidos).toFixed(2)} L</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-200 show-ventas-btn" data-id="${cierre.id_cierre}" data-iduser="${cierre.id_user}" data-fecha="${cierre.fecha_cierre}">Ver Ventas</button>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium flex space-x-2">
+                        <button class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-200 show-ventas-btn" 
+                            data-id="${cierre.id_cierre}" 
+                            data-iduser="${cierre.id_user}" 
+                            data-fecha="${cierre.fecha_cierre}">Ver Ventas</button>
+                        <button class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-200 delete-cierre-btn" 
+                            data-id="${cierre.id_cierre}" 
+                            data-iduser="${cierre.id_user}" 
+                            data-idstation="${cierre.id_estacion}" 
+                            data-fecha="${cierre.fecha_cierre}">Eliminar Cierre</button>
                     </td>
                 </tr>
             `
@@ -80,7 +88,6 @@ document.addEventListener('DOMContentLoaded', async function() {
                 // Verificar si el monto_debito es nulo o no está definido
                 const montoDebito = venta.tarjeta_debito === null ? '0.00' : parseFloat(venta.tarjeta_debito).toFixed(2)
                 const montoEfectivo = venta.efectivob === null ? '0.00' : parseFloat(venta.efectivob).toFixed(2)
-                
                 html += `
                     <div class="grid grid-cols-1 md:grid-cols-7 gap-4 py-4 md:py-2 border-b border-gray-200 dark:border-gray-700 last:border-b-0 items-center">
                         <div class="col-span-1">
@@ -143,6 +150,49 @@ document.addEventListener('DOMContentLoaded', async function() {
                 notifi('Error al cargar las ventas. Intenta de nuevo.', 'error')
             }
         }
+        // boton de eliminar cierres
+        if (e.target.classList.contains('delete-cierre-btn')) {
+            const idCierre = e.target.dataset.id;
+            const idUser = e.target.dataset.iduser;
+            const idStation = e.target.dataset.idstation;
+            const fechaCierre = e.target.dataset.fecha;
+            Swal.fire({
+                title: '¿Estás seguro?',
+                text: "Esta acción no se puede revertir. El cierre será eliminado y los tickets de venta asociados volverán a estar activos.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Sí, eliminar',
+                cancelButtonText: 'Cancelar'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    try {
+                        const response = await fetch(base_url + 'Estacion/deleteCierre', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({
+                                id_cierre: idCierre,
+                                id_usuario: idUser,
+                                id_estacion: idStation,
+                                fecha_cierre: fechaCierre
+                            })
+                        });
+                        const result = await response.json();
+                        if (result.success) {
+                            notifi('¡Eliminado!', 'success');
+                            // Recargar la lista de cierres para mostrar el estado actualizado
+                            loadInitialData();
+                        } else {
+                            notifi(result.message || 'Error al eliminar el cierre.', 'error');
+                        }
+                    } catch (error) {
+                        console.error('Error al eliminar el cierre:', error);
+                        notifi('Error de red o servidor.', 'error');
+                    }
+                }
+            });
+        }
     })
    // Event listener para los botones de eliminar en la lista de ventas
     ventasCierreList.addEventListener('click', async function(e) {
@@ -195,7 +245,6 @@ document.addEventListener('DOMContentLoaded', async function() {
             })
         }
     })
-
     // Event listener para el botón de imprimir
     btnImprimirCierre.addEventListener('click', async function() {
         // console.log(`La fecha del reporte es: ${fecha}`)
@@ -289,11 +338,10 @@ document.addEventListener('DOMContentLoaded', async function() {
                 }
             })
         } else {
-            console.error("Error: Los datos de cierre están incompletos.")
+            notifi("Error: Los datos de cierre están incompletos.", 'error')
+            // console.error("Error: Los datos de cierre están incompletos.")
         }
     }
-    // Agregar esta función en function.estacion.js (al final del archivo, antes del cierre del DOMContentLoaded)
-
     /**
      * Función para cargar dinámicamente las fechas disponibles con ventas
      * y mostrar el total de litros vendidos al seleccionar una fecha

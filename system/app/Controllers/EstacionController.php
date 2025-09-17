@@ -73,7 +73,7 @@ class Estacion extends Controllers{
             exit();
         }
         $data = [
-            'page_tag' => "Pagina principal",
+            'page_tag' => ESTACION,
             'page_title' => "Pagina Principal",
             'page_name' => "combustible",
             'page_link' => "registrar-venta",
@@ -81,7 +81,6 @@ class Estacion extends Controllers{
         ];
         $this->views->getViews($this, "registrar", $data);
     }
-
 	public function initialData() {
         $arrResponse = array('success' => false, 'message' => '');
         try {
@@ -195,6 +194,7 @@ class Estacion extends Controllers{
 		echo json_encode($arrResponse, JSON_UNESCAPED_UNICODE);
 		die();
 	}
+    // cerrar turno pendiente de dias anteriores
     public function cerrarTurnoPendiente() {
 		$arrResponse = array('success' => false, 'message' => '');
 		try {
@@ -319,7 +319,7 @@ class Estacion extends Controllers{
             exit();
         }
         $data = [
-            'page_tag' => "Pagina principal",
+            'page_tag' => ESTACION,
             'page_title' => "Pagina Principal",
             'page_name' => "combustible",
             'page_link' => "mantenimiento",
@@ -395,13 +395,11 @@ class Estacion extends Controllers{
                     $arrResponse = ['success' => false, 'message' => 'ID de venta no especificado.'];
                     echo json_encode($arrResponse, JSON_UNESCAPED_UNICODE);
                     die();
-                }
-                
+                }        
                 $idVenta = intval($postData['idVenta']);
                 $idUser = intval($postData['idUser']);
                 $fechaTicket = $postData['fechaTicket'];
                 $deleted = $this->estacionModel->deleteVenta($idVenta,$fechaTicket,$idUser); // Se asume que esta función existe en el modelo.
-                
                 if ($deleted) {
                     $arrResponse = ['success' => true, 'message' => 'Venta eliminada correctamente.'];
                 } else {
@@ -439,7 +437,6 @@ class Estacion extends Controllers{
         echo json_encode($arrResponse, JSON_UNESCAPED_UNICODE);
         die();
     }
-	
     /**
      * Trae los datos de un cierre específico para ser impresos sin necesidad de cerrar el día.
      */
@@ -452,10 +449,8 @@ class Estacion extends Controllers{
                     echo json_encode($arrResponse, JSON_UNESCAPED_UNICODE);
                     die();
                 }
-
                 $idCierre = intval($postData['idCierre']);
                 $dataCierre = $this->estacionModel->getDatosParaReporte($idCierre);
-                
                 if (!empty($dataCierre)) {
                     $arrResponse = ['success' => true, 'dataCierre' => $dataCierre];
                 } else {
@@ -490,15 +485,42 @@ class Estacion extends Controllers{
                 throw new Exception("Error: Dato 'fecha' no proporcionado.");
             }
             $totalLitros = $this->estacionModel->getLitrosPorFecha($data['fecha']);
-            $arrResponse = ['success' => true, 'totalLitros' => $totalLitros];
-            
+            $arrResponse = ['success' => true, 'totalLitros' => $totalLitros];    
         } catch (Exception $e) {
             $arrResponse['message'] = 'Error: ' . $e->getMessage();
         }
         echo json_encode($arrResponse, JSON_UNESCAPED_UNICODE);
         die();
     }
-
+    /**
+     * Maneja la solicitud para eliminar un cierre diario y resetear las ventas
+     */
+    public function deleteCierre() {
+        $arrResponse = array('success' => false, 'message' => '');
+        try {
+            $json = file_get_contents('php://input');
+            $data = json_decode($json, true);
+            // Validar que los datos necesarios están presentes
+            if (!isset($data['id_cierre']) || !isset($data['id_usuario']) || !isset($data['id_estacion']) || !isset($data['fecha_cierre'])) {
+                throw new Exception("Error: Datos incompletos para la eliminación.");
+            }
+            $idCierre = intval($data['id_cierre']);
+            $idUsuario = intval($data['id_usuario']);
+            $idEstacion = intval($data['id_estacion']);
+            $fechaCierre = $data['fecha_cierre'];
+            // Llamar al modelo para realizar la operación
+            $deleted = $this->estacionModel->deleteCierreAndResetVentas($idCierre, $idUsuario, $idEstacion, $fechaCierre);
+            if ($deleted) {
+                $arrResponse = ['success' => true, 'message' => 'Cierre eliminado. Las ventas han sido actualizadas.', 'data' => $this->estacionModel->getHistorialCierres()];
+            } else {
+                $arrResponse['message'] = 'No se pudo eliminar el cierre o actualizar las ventas. Verifique los datos o inténtelo de nuevo.';
+            }
+        } catch (Exception $e) {
+            $arrResponse['message'] = 'Error: ' . $e->getMessage();
+        }
+        echo json_encode($arrResponse, JSON_UNESCAPED_UNICODE);
+        die();
+    }
     public function mantenimiento(){
         // Validar nuevamente la sesión antes de mostrar el home
         if (!$this->validateSession()) {
@@ -506,7 +528,7 @@ class Estacion extends Controllers{
             exit();
         }
         $data = [
-            'page_tag' => "Pagina principal",
+            'page_tag' => ESTACION,
             'page_title' => "Pagina Principal",
             'page_name' => "combustible",
             'page_link' => "mantenimiento",

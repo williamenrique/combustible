@@ -271,6 +271,7 @@ class EstacionModel extends Mysql {
                 c.id_user,
                 u.usuario_nombres,
                 u.usuario_apellidos,
+                u.id_estacion,
                 v.tasa_dia,
                 (COALESCE(SUM(CASE WHEN v.id_tipo_pago = 1 THEN CAST(v.monto AS DECIMAL(10,2)) * CAST(v.tasa_dia AS DECIMAL(10,2)) ELSE 0 END), 0) +
                 COALESCE(SUM(CASE WHEN v.id_tipo_pago = 2 THEN CAST(v.monto AS DECIMAL(10,2)) ELSE 0 END), 0)) AS `efectivo_bs`,
@@ -360,16 +361,45 @@ class EstacionModel extends Mysql {
         $sql = "DELETE FROM table_es_venta WHERE id_venta = ? AND fecha_venta = ? AND id_user = ?";
         return $this->delete($sql, [$idVenta,$srtFecha,$idUSer]);
     }
-    public function deleteCierre($idCierre,$srtFecha,$idUSer) {
-        $sql = "DELETE FROM table_es_cierre WHERE id_cierre = ? AND fecha_cierre = ? AND id_user = ?";
-        return $this->delete($sql, [$idCierre,$srtFecha,$idUSer]);
-    }
     // mostrar datos para lista
-    // Agregar esta función en EstacionModel.php
     public function getFechasConVentas() {
         $sql = "SELECT DISTINCT fecha_venta 
                 FROM table_es_venta 
                 ORDER BY STR_TO_DATE(fecha_venta, '%d-%m-%y') DESC";
         return $this->select_all($sql);
+    }
+    /**
+     * Elimina un cierre y reinicia las ventas asociadas sin usar transacciones.
+     * @param {int} idCierre - ID del cierre diario a eliminar
+     * @param {int} idUsuario - ID del usuario del cierre
+     * @param {int} idEstacion - ID de la estación del cierre
+     * @param {string} fechaCierre - Fecha del cierre
+     * @return {bool} - True si la operación es exitosa
+     */
+    public function deleteCierreAndResetVentas(int $idCierre, int $idUsuario, int $idEstacion, string $fechaCierre) {
+
+            // 1. Actualizar tabla de ventas usando JOIN con table_usuarios para el id_estacion
+            $sqlUpdateVentas = "UPDATE table_es_venta v JOIN table_usuarios u ON v.id_user = u.usuario_id 
+                                SET v.id_cierre_diario = 0, v.status_ticket = 1 
+                                WHERE v.id_cierre_diario = ? AND v.fecha_venta = ? AND u.id_estacion = ?";
+            
+            // Los parámetros para esta consulta
+            $arrDataVentas = array($idCierre, $fechaCierre, $idEstacion);
+            
+            // Verificamos si la actualización de ventas es exitosa
+            $updateVentas = $this->update($sqlUpdateVentas, $arrDataVentas);
+            
+            // Si la actualización de ventas falló, detenemos la ejecución y retornamos false.
+            if (!$updateVentas) {
+                return false;
+            }
+            // 2. Si la actualización fue exitosa, procedemos a eliminar el registro de cierre.
+            $sqlDeleteCierre = "DELETE FROM table_es_cierre WHERE id_cierre = ? AND id_user = ? AND fecha_cierre = ?";
+            $arrDataCierre = array($idCierre, $idUsuario, $fechaCierre);
+            
+            // Retornamos el resultado de la eliminación
+            // echo $this->debugQuery($sqlDeleteCierre, $arrDataCierre);
+            return $this->delete($sqlDeleteCierre, $arrDataCierre);
+
     }
 }
