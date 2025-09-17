@@ -137,7 +137,7 @@ class EstacionModel extends Mysql {
                 END) AS total_general_bs
             FROM table_es_venta tVenta
             JOIN table_es_tipos_vehiculo tVehiculo ON tVenta.id_tipo_vehiculo = tVehiculo.id_tipo_vehiculo
-            JOIN table_usuarios tUser ON tventa.id_user = tUser.usuario_id
+            JOIN table_usuarios tUser ON tVenta.id_user = tUser.usuario_id
             LEFT JOIN table_es_estacion tEstacion ON tEstacion.id_estacion = tUser.id_estacion
             WHERE tVenta.id_user = ? AND tVenta.fecha_venta = ?
             GROUP BY tVenta.fecha_venta, tVenta.tasa_dia, tUser.usuario_nombres, tEstacion.estacion";
@@ -180,34 +180,34 @@ class EstacionModel extends Mysql {
         $this->srtDate = $fechaFormateada;
         $this->intIdUser = $intIdUser;
         $sql = "SELECT 
-            tventa.id_venta AS numero_venta,
-            tventa.fecha_venta,
+            tVenta.id_venta AS numero_venta,
+            tVenta.fecha_venta,
             tvehiculo.nombre AS tipo_vehiculo,
-            tventa.litros AS cantidad_litros,
-            tventa.monto,
-            tventa.id_cierre_diario,
-            tventa.id_user,
-            tventa.tasa_dia,
+            tVenta.litros AS cantidad_litros,
+            tVenta.monto,
+            tVenta.id_cierre_diario,
+            tVenta.id_user,
+            tVenta.tasa_dia,
             CASE 
-                WHEN tpago.id_tipo_pago = 1 THEN tventa.monto * tventa.tasa_dia
-                WHEN tpago.id_tipo_pago = 2 THEN tventa.monto
+                WHEN tpago.id_tipo_pago = 1 THEN tVenta.monto * tVenta.tasa_dia
+                WHEN tpago.id_tipo_pago = 2 THEN tVenta.monto
                 ELSE NULL 
             END AS efectivob,
-            CASE WHEN tpago.id_tipo_pago = 3 THEN tventa.monto ELSE NULL END AS tarjeta_debito,
+            CASE WHEN tpago.id_tipo_pago = 3 THEN tVenta.monto ELSE NULL END AS tarjeta_debito,
             tUser.usuario_nombres AS empleado
         FROM 
-            table_es_venta tventa
+            table_es_venta tVenta
         JOIN 
-            table_es_tipos_vehiculo tvehiculo ON tventa.id_tipo_vehiculo = tvehiculo.id_tipo_vehiculo
+            table_es_tipos_vehiculo tvehiculo ON tVenta.id_tipo_vehiculo = tvehiculo.id_tipo_vehiculo
         JOIN 
-            table_es_tipos_pago tpago ON tventa.id_tipo_pago = tpago.id_tipo_pago
+            table_es_tipos_pago tpago ON tVenta.id_tipo_pago = tpago.id_tipo_pago
         JOIN 
-            table_usuarios tUser ON tventa.id_user = tUser.usuario_id
+            table_usuarios tUser ON tVenta.id_user = tUser.usuario_id
         WHERE 
-            tventa.fecha_venta = ? 
-            AND tventa.id_user = ?
+            tVenta.fecha_venta = ? 
+            AND tVenta.id_user = ?
         ORDER BY 
-        tventa.fecha_venta";
+        tVenta.fecha_venta";
         $request = $this->select_all($sql, [$srtDate,$intIdUser]);
         return $request;
     }
@@ -241,10 +241,10 @@ class EstacionModel extends Mysql {
                 ) AS total_efectivo_bs
                 FROM table_es_venta tVenta
                 JOIN table_es_tipos_vehiculo tVehiculo ON tVenta.id_tipo_vehiculo = tVehiculo.id_tipo_vehiculo
-                JOIN table_usuarios tUser ON tventa.id_user = tUser.usuario_id
+                JOIN table_usuarios tUser ON tVenta.id_user = tUser.usuario_id
                 LEFT JOIN table_es_estacion tEstacion ON tEstacion.id_estacion = tUser.id_estacion
                 WHERE tVenta.fecha_venta = ? 
-                AND tventa.id_user = ?
+                AND tVenta.id_user = ?
                 GROUP BY tVenta.fecha_venta";
         $request = $this->select($sql, [$srtDate,$intIdUser]);
         return $request;
@@ -306,10 +306,10 @@ class EstacionModel extends Mysql {
                 SUM(CASE WHEN id_tipo_pago = 3 THEN monto ELSE 0 END) AS total_debito
                 FROM table_es_venta tVenta
                 JOIN table_es_tipos_vehiculo tVehiculo ON tVenta.id_tipo_vehiculo = tVehiculo.id_tipo_vehiculo
-                JOIN table_usuarios tUser ON tventa.id_user = tUser.usuario_id
+                JOIN table_usuarios tUser ON tVenta.id_user = tUser.usuario_id
                 LEFT JOIN table_es_estacion tEstacion ON tEstacion.id_estacion = tUser.id_estacion
                 WHERE tVenta.fecha_venta = ?
-                AND tventa.id_user =  ?
+                AND tVenta.id_user =  ?
                 GROUP BY tVenta.fecha_venta";
         return  $this->select_all($sql, [$fechaCierre,$idUser]);
     }

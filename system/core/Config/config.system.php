@@ -1,5 +1,6 @@
 <?php
-const BASE_URL = "http://192.168.1.240/combustible/";
+const BASE_URL = "http://192.168.0.240/combustible/";
+// const BASE_URL = "https://estacion.infinityfree.me/";
 const HEAD = "src/include/head.php";
 const FOOTER = "src/include/footer.php";
 // const BACK_URL = $_SERVER['REQUEST_URI'];
@@ -22,11 +23,16 @@ const PLUGINS = BASE_URL."src/plugins/";
 const CONTROLLER = BASE_URL."system/core/Libraries/Controllers.php";
 const LOAD = BASE_URL."system/core/Libraries/Load.php";
 
-//constantes de base de datos
+//constantes de base de datos local
 const DB_HOST = "localhost";
 const DB_USER = "root";
 const DB_PASS = "";
 const DB_NAME = "combustible_db";
+// base de datos en la nube
+// const DB_HOST = "sql202.infinityfree.com";
+// const DB_USER = "if0_39962441";
+// const DB_PASS = "25estacion25";
+// const DB_NAME = "if0_39962441_estacion";
 //const DB_NAME = "if0_37518912_prueba";
 const DB_CHARSET = "charset=utf8";
 //delimitador decimal y millar Ej. 24,1999.00

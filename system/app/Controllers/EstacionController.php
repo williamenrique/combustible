@@ -502,4 +502,20 @@ class Estacion extends Controllers{
         echo json_encode($arrResponse, JSON_UNESCAPED_UNICODE);
         die();
     }
+
+    public function mantenimiento(){
+        // Validar nuevamente la sesión antes de mostrar el home
+        if (!$this->validateSession()) {
+            header("Location:".base_url().'login');
+            exit();
+        }
+        $data = [
+            'page_tag' => "Pagina principal",
+            'page_title' => "Pagina Principal",
+            'page_name' => "combustible",
+            'page_link' => "mantenimiento",
+            'page_functions' => "function.dataventa.js"
+        ];
+        $this->views->getViews($this, "mantenimiento", $data);
+    }
 }

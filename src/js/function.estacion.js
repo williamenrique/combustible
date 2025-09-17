@@ -62,10 +62,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Cargar ventas pendientes
                 updateVentasPendientes(data.ventasPendientes)
             } else {
-                Swal.fire('Error', data.message, 'error')
+                notifi(data.message, 'error')
             }
         } catch (error) {
-            Swal.fire('Error', 'Error al cargar los datos iniciales: ' + error.message, 'error')
+            notifi('Error al cargar los datos iniciales: ' + error.message, 'error')
         }
     }
     // Funciones de actualización de la UI
@@ -365,7 +365,7 @@ document.addEventListener('DOMContentLoaded', function() {
         e.preventDefault()
         const lts = parseFloat(ltsInput.value)
         if (lts <= 0 || isNaN(lts)) {
-            notifi('Advertencia', 'Por favor, ingrese una cantidad de litros válida.', 'warning')
+            notifi('Por favor, ingrese una cantidad de litros válida.', 'warning')
             return
         }
         const formData = new FormData(ventaForm)
@@ -483,10 +483,10 @@ document.addEventListener('DOMContentLoaded', function() {
             if (result.success) {
                 fntImprimirDetallado(result.ticketData)
             } else {
-                notifi('Error', result.message, 'error')
+                notifi( result.message, 'error')
             }
         } catch (error) {
-            Swal.fire('Error', 'Error al obtener los detalles de ventas.', 'error')
+            notifi('Error al obtener los detalles de ventas.', 'error')
         }
     })
     // En tu archivo function.estacion.js
@@ -509,10 +509,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 // console.log(result.data.dataTotal)
                 fntGenerarPDF(result.data) 
             } else {
-                notifi('Error', result.message, 'error')
+                notifi(result.message, 'error')
             }
         } catch (error) {
-            Swal.fire('Error', 'Error al generar el PDF de ventas.', 'error')
+            notifi('Error al generar el PDF de ventas.', 'error')
         }
     })
     // generar pdf de cierre pendiente
@@ -536,10 +536,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     notifi('Generando PDF...', 'success')
                     fntGenerarPDF(result.data) 
                 } else {
-                    notifi('Error', result.message, 'error')
+                    notifi(result.message, 'error')
                 }
             } catch (error) {
-                Swal.fire('Error', 'Error al generar el PDF de ventas. Inténtalo de nuevo.', 'error')
+                notifi('Error al generar el PDF de ventas. Inténtalo de nuevo.', 'error')
             }
         }
     })
