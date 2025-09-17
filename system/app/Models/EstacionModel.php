@@ -263,6 +263,7 @@ class EstacionModel extends Mysql {
         $request = $this->select($sql, [$srtDate]);
         return $request['total_litros'] ?? 0;
     }
+    // mostrar historia de cierres para mantenimiento
     public function getHistorialCierres() {
         $sql = "SELECT 
                 c.id_cierre,
@@ -271,10 +272,10 @@ class EstacionModel extends Mysql {
                 u.usuario_nombres,
                 u.usuario_apellidos,
                 v.tasa_dia,
-                (COALESCE(SUM(CASE WHEN v.id_tipo_pago = 1 THEN CAST(v.monto AS DECIMAL(10,2)) * CAST(c.tasa_dia AS DECIMAL(10,2)) ELSE 0 END), 0) +
+                (COALESCE(SUM(CASE WHEN v.id_tipo_pago = 1 THEN CAST(v.monto AS DECIMAL(10,2)) * CAST(v.tasa_dia AS DECIMAL(10,2)) ELSE 0 END), 0) +
                 COALESCE(SUM(CASE WHEN v.id_tipo_pago = 2 THEN CAST(v.monto AS DECIMAL(10,2)) ELSE 0 END), 0)) AS `efectivo_bs`,
                 COALESCE(SUM(CASE WHEN v.id_tipo_pago = 3 THEN CAST(v.monto AS DECIMAL(10,2)) ELSE 0 END), 0) AS `debito_bs`,
-                ((COALESCE(SUM(CASE WHEN v.id_tipo_pago = 1 THEN CAST(v.monto AS DECIMAL(10,2)) * CAST(c.tasa_dia AS DECIMAL(10,2)) ELSE 0 END), 0) +
+                ((COALESCE(SUM(CASE WHEN v.id_tipo_pago = 1 THEN CAST(v.monto AS DECIMAL(10,2)) * CAST(v.tasa_dia AS DECIMAL(10,2)) ELSE 0 END), 0) +
                 COALESCE(SUM(CASE WHEN v.id_tipo_pago = 2 THEN CAST(v.monto AS DECIMAL(10,2)) ELSE 0 END), 0)) +
                 COALESCE(SUM(CASE WHEN v.id_tipo_pago = 3 THEN CAST(v.monto AS DECIMAL(10,2)) ELSE 0 END), 0)) AS `total_bs`,
                 COALESCE(SUM(CAST(v.litros AS DECIMAL(10,2))), 0) AS `total_litros_vendidos`
@@ -283,9 +284,11 @@ class EstacionModel extends Mysql {
                 INNER JOIN table_es_venta v ON c.id_cierre = v.id_cierre_diario
                 GROUP BY c.fecha_cierre, c.id_user, u.usuario_apellidos, u.usuario_nombres, c.tasa_dia
                 ORDER BY c.fecha_cierre DESC, c.id_user";
+
         $request = $this->select_all($sql);
         return $request;
     }
+    // obtener ventas del dia seleccionado por usuario y cierre
     public function getVentasByCierre($idCierre,$idUser,$fechaCierre) {
         $sql = "SELECT 
                 COUNT(CASE WHEN tVenta.id_tipo_vehiculo = 1 THEN   0 END) AS Automovil,
@@ -313,9 +316,9 @@ class EstacionModel extends Mysql {
                 GROUP BY tVenta.fecha_venta";
         return  $this->select_all($sql, [$fechaCierre,$idUser]);
     }
+    // obtener datos para reporte detallado de cierre sin cerrar
     public function getDatosParaReporte($idCierre) {
-        $sqlCierre = "
-            SELECT 
+        $sqlCierre = "SELECT 
                 c.id_cierre,
                 c.fecha_cierre,
                 c.total_litros,
@@ -334,8 +337,7 @@ class EstacionModel extends Mysql {
         if (empty($resumen)) {
             return null;
         }
-        $sqlDetalles = "
-            SELECT
+        $sqlDetalles = "SELECT
                 v.id_venta,
                 v.fecha_venta,
                 v.litros,
@@ -349,8 +351,7 @@ class EstacionModel extends Mysql {
             INNER JOIN table_es_tipos_vehiculo tv ON v.id_tipo_vehiculo = tv.id_tipo_vehiculo
             INNER JOIN table_es_tipos_pago tp ON v.id_tipo_pago = tp.id_tipo_pago
             WHERE v.id_cierre_diario = ?
-            ORDER BY v.id_venta ASC
-        ";
+            ORDER BY v.id_venta ASC";
         $arrDataDetalles = array($idCierre);
         $detalles = $this->select_all($sqlDetalles, $arrDataDetalles);
         return ['resumen' => $resumen, 'detalles' => $detalles];
@@ -359,7 +360,10 @@ class EstacionModel extends Mysql {
         $sql = "DELETE FROM table_es_venta WHERE id_venta = ? AND fecha_venta = ? AND id_user = ?";
         return $this->delete($sql, [$idVenta,$srtFecha,$idUSer]);
     }
-
+    public function deleteCierre($idCierre,$srtFecha,$idUSer) {
+        $sql = "DELETE FROM table_es_cierre WHERE id_cierre = ? AND fecha_cierre = ? AND id_user = ?";
+        return $this->delete($sql, [$idCierre,$srtFecha,$idUSer]);
+    }
     // mostrar datos para lista
     // Agregar esta función en EstacionModel.php
     public function getFechasConVentas() {

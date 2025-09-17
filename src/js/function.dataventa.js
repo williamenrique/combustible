@@ -119,7 +119,11 @@ document.addEventListener('DOMContentLoaded', async function() {
             const idCierre = e.target.dataset.id
             const iduser = e.target.dataset.iduser
             const fechaCierre = e.target.dataset.fecha
+            const empleado = e.target.dataset.empleado
             cierreIdTitle.textContent = idCierre
+            const elemento = document.getElementById('fechaventa')
+            elemento.textContent = fechaCierre
+            const usuario = document.getElementById('usuario')
             try {
                 const response = await fetch(base_url + 'Estacion/getVentasByCierre', {
                     method: 'POST',
@@ -129,7 +133,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 const result = await response.json()
                 if (result.success) {
                     renderVentasList(result.data)
-                    // console.log(result.data)
+                    usuario.textContent = result.data[2].empleado
                 } else {
                     renderVentasList([])
                     notifi(result.message, 'error')
@@ -249,7 +253,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             // Crear un formulario oculto
             const form = document.createElement('form')
             form.method = 'POST'
-            form.action = base_url + "data/reporteDom.php"
+            form.action = base_url + "data/reporte.php"
             form.target = '_blank' // Abrir en una nueva pestaña
             // Crear un input para los datos y asignarle el JSON
             const input = document.createElement('input')

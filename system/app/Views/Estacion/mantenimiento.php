@@ -126,7 +126,14 @@
         </div>
         
         <div id="ventasCierreSection" class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 transition-colors duration-300 hidden">
-            <h3 class="text-2xl font-semibold text-gray-800 dark:text-white mb-4">Ventas del Cierre #<span id="cierreIdTitle" class="text-blue-500"></span></h3>
+            <h3 class="text-2xl font-semibold text-gray-800 dark:text-white mb-4">Ventas del Cierre #<span id="cierreIdTitle" class="text-blue-500">  </span>
+            </h3>
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-2">
+                Fecha: <span id="fechaventa" class="text-blue-500"></span>
+            </h3>
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-2">
+                Usuario: <span id="usuario" class="text-blue-500"></span>
+            </h3>
             
             <div id="ventasCierreList" class="space-y-4">
                 </div>

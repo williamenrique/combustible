@@ -440,10 +440,6 @@ class Estacion extends Controllers{
         die();
     }
 	
-
-
-
-
     /**
      * Trae los datos de un cierre específico para ser impresos sin necesidad de cerrar el día.
      */
