@@ -178,6 +178,27 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     })
     // Función para renderizar la tabla de cierres
+    function renderCierresTable1(data) {
+        let html = ''
+        data.forEach(cierre => {
+            html += `
+                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">${cierre.id_cierre}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">${cierre.usuario_nombres} ${cierre.usuario_apellidos}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">${parseFloat(cierre.tasa_dia).toFixed(2)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">${cierre.fecha_cierre}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">${parseFloat(cierre.efectivo_bs).toFixed(2)} Bs</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">${parseFloat(cierre.debito_bs).toFixed(2)} Bs</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">${parseFloat(cierre.total_bs).toFixed(2)} Bs</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">${parseFloat(cierre.total_litros_vendidos).toFixed(2)} L</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-200 show-ventas-btn" data-id="${cierre.id_cierre}" data-iduser="${cierre.id_user}" data-fecha="${cierre.fecha_cierre}">Ver Ventas</button>
+                    </td>
+                </tr>
+            `
+        })
+        cierresTableBody.innerHTML = html
+    }
     function renderCierresTable(data) {
         let html = ''
         data.forEach(cierre => {
@@ -198,6 +219,48 @@ document.addEventListener('DOMContentLoaded', async function() {
             `
         })
         cierresTableBody.innerHTML = html
+        
+        // Inicializar DataTables después de renderizar la tabla
+        initializeDataTable();
+    }
+    function initializeDataTable() {
+        // Destruir DataTable si ya existe
+        if ($.fn.DataTable.isDataTable('#cierresTable')) {
+            $('#cierresTable').DataTable().destroy();
+        }
+        
+        // Inicializar DataTable con configuración
+        $('#cierresTable').DataTable({
+            dom: '<"flex justify-between items-center mb-4"<"flex"l><"flex"f>><"bg-white dark:bg-gray-800 rounded-lg"rt><"flex justify-between items-center mt-4"<"flex"i><"flex"p>>',
+            language: {
+                search: "Buscar:",
+                lengthMenu: "Mostrar _MENU_ registros",
+                info: "Mostrando _START_ a _END_ de _TOTAL_ registros",
+                infoEmpty: "Mostrando 0 a 0 de 0 registros",
+                infoFiltered: "(filtrado de _MAX_ registros totales)",
+                paginate: {
+                    first: "Primero",
+                    previous: "Anterior",
+                    next: "Siguiente",
+                    last: "Último"
+                }
+            },
+            pageLength: 10,
+            lengthMenu: [5, 10, 25, 50],
+            order: [[3, 'desc']], // Ordenar por fecha (columna 4) descendente
+            columnDefs: [
+                { orderable: false, targets: [8] } // Hacer que la columna de acciones no sea ordenable
+            ],
+            initComplete: function() {
+                // Aplicar clases de Tailwind a los elementos de DataTables
+                $('.dataTables_filter input').addClass('px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500');
+                $('.dataTables_length select').addClass('px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500');
+                $('.dataTables_info').addClass('text-sm text-gray-600 dark:text-gray-400');
+                $('.dataTables_paginate').addClass('flex space-x-2');
+                $('.paginate_button').addClass('px-3 py-1 rounded-md bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600');
+                $('.paginate_button.current').addClass('bg-indigo-600 text-white hover:bg-indigo-700');
+            }
+        });
     }
     // Función para renderizar la lista de ventas de un cierre
     function renderVentasList(data) {
