@@ -536,4 +536,41 @@ class Estacion extends Controllers{
         ];
         $this->views->getViews($this, "mantenimiento", $data);
     }
+    public function getOpenSales() {
+        $arrResponse = ['success' => false, 'message' => ''];
+        try {
+            $openSales = $this->estacionModel->getOpenSales();
+            if (!empty($openSales)) {
+                $arrResponse = ['success' => true, 'data' => $openSales];
+            } else {
+                $arrResponse['message'] = 'No hay ventas abiertas.';
+            }
+        } catch (Exception $e) {
+            $arrResponse['message'] = 'Error: ' . $e->getMessage();
+        }
+        echo json_encode($arrResponse, JSON_UNESCAPED_UNICODE);
+        die();
+    }
+    
+    public function closeSale() {
+        $arrResponse = ['success' => false, 'message' => ''];
+        try {
+            $data = json_decode(file_get_contents('php://input'), true);
+            $idVenta = isset($data['id_venta']) ? intval($data['id_venta']) : 0;
+            if ($idVenta > 0) {
+                $closed = $this->estacionModel->closeSale($idVenta);
+                if ($closed) {
+                    $arrResponse = ['success' => true, 'message' => 'Venta cerrada exitosamente.'];
+                } else {
+                    $arrResponse['message'] = 'No se pudo cerrar la venta. Intente de nuevo.';
+                }
+            } else {
+                $arrResponse['message'] = 'ID de venta no válido.';
+            }
+        } catch (Exception $e) {
+            $arrResponse['message'] = 'Error: ' . $e->getMessage();
+        }
+        echo json_encode($arrResponse, JSON_UNESCAPED_UNICODE);
+        die();
+    }
 }

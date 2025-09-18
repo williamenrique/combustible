@@ -73,9 +73,43 @@
 #selectFechaCierre option:hover {
     background-color: #f3f4f6;
 }
+/* para la lista de usuarios  */
+/* Estilos para el tema oscuro */
+    .dark .bg-gray-800 {
+        background-color: #1a202c; /* Color de fondo oscuro */
+    }
+    .dark .text-gray-200 {
+        color: #e2e8f0; /* Color de texto claro */
+    }
+    .dark .border-gray-700 {
+        border-color: #4a5568; /* Color de borde oscuro */
+    }
 </style>
 <div class="content-area">
-
+        <div id="openSalesSection" class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 mb-8 transition-colors duration-300">
+        <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-6 border-b-2 border-gray-200 dark:border-gray-700 pb-2">
+            Ventas Abiertas
+            <span class="text-sm font-normal text-gray-500 dark:text-gray-400 block mt-1">Lista de ventas sin cerrar.</span>
+        </h2>
+        
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead class="bg-gray-50 dark:bg-gray-700">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Empleado</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Fecha</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Litros Vendidos</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700" id="openSalesTableBody">
+                    </tbody>
+            </table>
+        </div>
+        <div id="noOpenSalesMessage" class="mt-4 text-center text-gray-500 dark:text-gray-400 hidden">
+            No hay ventas abiertas actualmente.
+        </div>
+    </div>
     <!-- <div class="min-h-screen p-6 bg-gray-100 dark:bg-gray-900 transition-colors duration-300"> -->
     <div class="p-6  dark:bg-gray-900 transition-colors duration-300">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">

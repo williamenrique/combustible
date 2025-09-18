@@ -36,6 +36,7 @@
 	<script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
 	<script src="<?= JS ?>function.main.js"></script>
 	<script src="<?= JS.$data['page_functions']?>"></script>
+	<script src="<?= JS ?>function.imprimir.js"></script>
 	<script src="<?= JS ?>notifications.js"></script>
 	</body>
 </html>

@@ -377,7 +377,6 @@ class EstacionModel extends Mysql {
      * @return {bool} - True si la operación es exitosa
      */
     public function deleteCierreAndResetVentas(int $idCierre, int $idUsuario, int $idEstacion, string $fechaCierre) {
-
             // 1. Actualizar tabla de ventas usando JOIN con table_usuarios para el id_estacion
             $sqlUpdateVentas = "UPDATE table_es_venta v JOIN table_usuarios u ON v.id_user = u.usuario_id 
                                 SET v.id_cierre_diario = 0, v.status_ticket = 1 
@@ -400,6 +399,36 @@ class EstacionModel extends Mysql {
             // Retornamos el resultado de la eliminación
             // echo $this->debugQuery($sqlDeleteCierre, $arrDataCierre);
             return $this->delete($sqlDeleteCierre, $arrDataCierre);
+    }
+    /**
+     * Obtiene una lista de ventas con estatus = 1 (abiertas)
+     * @return array
+     */
+    public function getOpenSales() {
+        $sql = "SELECT 
+            v.id_user, 
+            v.fecha_venta,
+            SUM(CAST(v.litros AS DECIMAL(10,2))) AS total_litros, 
+            u.usuario_nombres AS nombre,
+            u.usuario_apellidos AS apellido 
+        FROM table_es_venta v
+        JOIN table_usuarios u ON v.id_user = u.usuario_id
+        WHERE v.status_ticket = 1
+        GROUP BY v.id_user, v.fecha_venta, u.usuario_nombres, u.usuario_apellidos
+        ORDER BY v.fecha_venta DESC";
+        $request = $this->select_all($sql);
+        return $request;
+    }
 
+    /**
+     * Cierra una venta cambiando su status a 0
+     * @param int $idVenta
+     * @return bool
+     */
+    public function closeSale(int $idVenta) {
+        $sql = "UPDATE table_es_venta SET status_ticket = 0 WHERE id_venta = ?";
+        $arrData = array($idVenta);
+        $request = $this->update($sql, $arrData);
+        return $request;
     }
 }

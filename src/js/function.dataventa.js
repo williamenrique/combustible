@@ -5,9 +5,15 @@ document.addEventListener('DOMContentLoaded', async function() {
     const cierresTableBody = document.getElementById('cierresTableBody')
     const ventasCierreSection = document.getElementById('ventasCierreSection')
     const cierreIdTitle = document.getElementById('cierreIdTitle')
+    const fechaCierreTitle = document.getElementById('fechaventa')
+    const usuarioTitle = document.getElementById('usuario')
     const ventasCierreList = document.getElementById('ventasCierreList')
     const btnImprimirCierre = document.getElementById('btnImprimirCierre')
     const btnImprimirPdf = document.getElementById('btnImprimirPdf')
+    const btnAccionCierre = document.getElementById('btnAccionCierre')
+    const openSalesTableBody = document.getElementById('openSalesTableBody')
+    const noOpenSalesMessage = document.getElementById('noOpenSalesMessage')
+    
     // Función para cargar todos los datos iniciales
     async function loadInitialData() {
         // Cargar total de litros del sistema
@@ -34,6 +40,143 @@ document.addEventListener('DOMContentLoaded', async function() {
             cierresTableBody.innerHTML = '<tr><td colspan="9" class="text-center py-4 text-red-500">Error al cargar datos.</td></tr>'
         }
     }
+
+    /**
+     * Cargar y mostrar la lista de ventas abiertas
+     */
+    async function loadOpenSales() {
+        try {
+            const response = await fetch(base_url + 'Estacion/getOpenSales')
+            const result = await response.json()
+            
+            if (result.success && result.data.length > 0) {
+                noOpenSalesMessage.classList.add('hidden')
+                renderOpenSalesTable(result.data)
+            } else {
+                noOpenSalesMessage.classList.remove('hidden')
+                openSalesTableBody.innerHTML = ''
+            }
+        } catch (error) {
+            console.error('Error al cargar ventas abiertas:', error)
+            notifi('Error al cargar las ventas abiertas.', 'error')
+        }
+    }
+    // Función para renderizar la tabla de ventas abiertas
+    function renderOpenSalesTable(data) {
+        let html = ''
+        data.forEach(sale => {
+            html += `
+                <tr class="hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">${sale.nombre} ${sale.apellido}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-200">${sale.fecha_venta}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-200">${parseFloat(sale.total_litros).toFixed(2)} L</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-full transition duration-300 close-sale-btn" data-fecha="${sale.fecha_venta}" data-iduser="${sale.id_user}">
+                            Cerrar Venta
+                        </button>
+                        <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full transition duration-300 print-pdf-btn" data-id="${sale.id_cierre}" data-iduser="${sale.id_user}" data-fecha="${sale.fecha_venta}">
+                            Imprimir PDF
+                        </button>
+                    </td>
+                </tr>
+            `
+        })
+        openSalesTableBody.innerHTML = html
+    }
+    // Event listener para los botones de ventas abiertas
+    openSalesTableBody.addEventListener('click', async function(e) {
+        if (e.target.classList.contains('close-sale-btn')) {
+            const fechaVenta = e.target.dataset.fecha
+            const userId = e.target.dataset.iduser
+            Swal.fire({
+                title: '¿Deseas cerrar esta venta?',
+                text: `Esto generará el reporte de cierre para la venta seleccionada.`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, cerrar',
+                cancelButtonText: 'Cancelar'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    try {
+                        const response = await fetch(base_url + 'Estacion/cerrarTurnoPendiente', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({userId: userId, fecha_cierre: fechaVenta})
+                        })
+                        const result = await response.json()
+                        if (result.success) {
+                            notifi('Venta cerrada exitosamente', 'success')
+                            // 1. Llama a la función para imprimir el resumen de cierre
+                            if (typeof fntImprimirCierre === 'function') {
+                                fntImprimirCierre(result.dataCierre)
+                            }
+                            // 2. Realiza una nueva solicitud para obtener los datos detallados
+                            try {
+                                const detailedResponse = await fetch(base_url + 'Estacion/getDetalleVentas', {
+                                    method: 'POST',
+                                    headers: {'Content-Type': 'application/json'},
+                                    body: JSON.stringify({idUser: userId, fecha_detalle: fechaVenta})
+                                })
+                                const detailedResult = await detailedResponse.json()
+                                
+                                if (detailedResult.success) {
+                                    // 3. Llama a la función para imprimir el reporte detallado
+                                    if (typeof fntImprimirDetallado === 'function') {
+                                        fntImprimirDetallado(detailedResult.ticketData)
+                                    }
+                                } else {
+                                    // Manejar error si no se pueden obtener los datos detallados
+                                    notifi(detailedResult.message, 'error')
+                                }
+                            } catch (detailError) {
+                                console.error('Error al obtener datos detallados:', detailError)
+                                notifi('Error al obtener el detalle de ventas', 'error')
+                            }
+                            // Recargar ventas abiertas y datos iniciales
+                            loadOpenSales()
+                            loadInitialData()
+                            
+                        } else {
+                            notifi(result.message, 'error')
+                        }
+                    } catch (error) {
+                        console.error('Error al cerrar venta:', error)
+                        notifi('Error al cerrar la venta', 'error')
+                    }
+                }
+            })
+        }
+        if (e.target.classList.contains('print-pdf-btn')) {
+            try {
+                // Obtener los datos directamente del botón que se hizo clic
+                // const idVenta = e.target.dataset.id;
+                const fechaVenta = e.target.dataset.fecha;
+                const userId = e.target.dataset.iduser; // Asegúrate de que este atributo existe en el botón
+                const response = await fetch(base_url + 'Estacion/generarReportePdf', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        fecha: fechaVenta,    // Fecha de la venta
+                        idUser: userId        // ID del usuario
+                    })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    notifi('Generando PDF...', 'success');
+                    if (typeof fntGenerarPDF === 'function') {
+                        fntGenerarPDF(result.data);
+                    } else {
+                        notifi('Error: Función de PDF no disponible', 'error');
+                    }
+                } else {
+                    notifi(result.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error al generar PDF:', error);
+                notifi('Error al generar el PDF de ventas.', 'error');
+            }
+        }
+    })
     // Función para renderizar la tabla de cierres
     function renderCierresTable(data) {
         let html = ''
@@ -48,16 +191,8 @@ document.addEventListener('DOMContentLoaded', async function() {
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">${parseFloat(cierre.debito_bs).toFixed(2)} Bs</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">${parseFloat(cierre.total_bs).toFixed(2)} Bs</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">${parseFloat(cierre.total_litros_vendidos).toFixed(2)} L</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium flex space-x-2">
-                        <button class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-200 show-ventas-btn" 
-                            data-id="${cierre.id_cierre}" 
-                            data-iduser="${cierre.id_user}" 
-                            data-fecha="${cierre.fecha_cierre}">Ver Ventas</button>
-                        <button class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-200 delete-cierre-btn" 
-                            data-id="${cierre.id_cierre}" 
-                            data-iduser="${cierre.id_user}" 
-                            data-idstation="${cierre.id_estacion}" 
-                            data-fecha="${cierre.fecha_cierre}">Eliminar Cierre</button>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-200 show-ventas-btn" data-id="${cierre.id_cierre}" data-iduser="${cierre.id_user}" data-fecha="${cierre.fecha_cierre}">Ver Ventas</button>
                     </td>
                 </tr>
             `
@@ -66,6 +201,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
     // Función para renderizar la lista de ventas de un cierre
     function renderVentasList(data) {
+        // const nombreUsuario = result.data.usuarios_nombres + ' ' + result.data.usuarios_apellidos
+        usuarioTitle.textContent = data[0].empleado
         const idUser = (data.length > 0) ?  data[0].id_user : null
         const fecha_venta = (data.length > 0) ?  data[0].fecha_venta : null
         let html = ''
@@ -88,6 +225,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 // Verificar si el monto_debito es nulo o no está definido
                 const montoDebito = venta.tarjeta_debito === null ? '0.00' : parseFloat(venta.tarjeta_debito).toFixed(2)
                 const montoEfectivo = venta.efectivob === null ? '0.00' : parseFloat(venta.efectivob).toFixed(2)
+                
                 html += `
                     <div class="grid grid-cols-1 md:grid-cols-7 gap-4 py-4 md:py-2 border-b border-gray-200 dark:border-gray-700 last:border-b-0 items-center">
                         <div class="col-span-1">
@@ -125,12 +263,9 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (e.target.classList.contains('show-ventas-btn')) {
             const idCierre = e.target.dataset.id
             const iduser = e.target.dataset.iduser
-            const fechaCierre = e.target.dataset.fecha
-            const empleado = e.target.dataset.empleado
             cierreIdTitle.textContent = idCierre
-            const elemento = document.getElementById('fechaventa')
-            elemento.textContent = fechaCierre
-            const usuario = document.getElementById('usuario')
+            const fechaCierre = e.target.dataset.fecha
+            fechaCierreTitle.textContent = fechaCierre
             try {
                 const response = await fetch(base_url + 'Estacion/getVentasByCierre', {
                     method: 'POST',
@@ -139,8 +274,8 @@ document.addEventListener('DOMContentLoaded', async function() {
                 })
                 const result = await response.json()
                 if (result.success) {
+                    
                     renderVentasList(result.data)
-                    usuario.textContent = result.data[2].empleado
                 } else {
                     renderVentasList([])
                     notifi(result.message, 'error')
@@ -149,49 +284,6 @@ document.addEventListener('DOMContentLoaded', async function() {
                 console.error('Error al obtener las ventas del cierre:', error)
                 notifi('Error al cargar las ventas. Intenta de nuevo.', 'error')
             }
-        }
-        // boton de eliminar cierres
-        if (e.target.classList.contains('delete-cierre-btn')) {
-            const idCierre = e.target.dataset.id;
-            const idUser = e.target.dataset.iduser;
-            const idStation = e.target.dataset.idstation;
-            const fechaCierre = e.target.dataset.fecha;
-            Swal.fire({
-                title: '¿Estás seguro?',
-                text: "Esta acción no se puede revertir. El cierre será eliminado y los tickets de venta asociados volverán a estar activos.",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#3085d6',
-                cancelButtonColor: '#d33',
-                confirmButtonText: 'Sí, eliminar',
-                cancelButtonText: 'Cancelar'
-            }).then(async (result) => {
-                if (result.isConfirmed) {
-                    try {
-                        const response = await fetch(base_url + 'Estacion/deleteCierre', {
-                            method: 'POST',
-                            headers: {'Content-Type': 'application/json'},
-                            body: JSON.stringify({
-                                id_cierre: idCierre,
-                                id_usuario: idUser,
-                                id_estacion: idStation,
-                                fecha_cierre: fechaCierre
-                            })
-                        });
-                        const result = await response.json();
-                        if (result.success) {
-                            notifi('¡Eliminado!', 'success');
-                            // Recargar la lista de cierres para mostrar el estado actualizado
-                            loadInitialData();
-                        } else {
-                            notifi(result.message || 'Error al eliminar el cierre.', 'error');
-                        }
-                    } catch (error) {
-                        console.error('Error al eliminar el cierre:', error);
-                        notifi('Error de red o servidor.', 'error');
-                    }
-                }
-            });
         }
     })
    // Event listener para los botones de eliminar en la lista de ventas
@@ -219,7 +311,6 @@ document.addEventListener('DOMContentLoaded', async function() {
                         })
                         const result = await response.json()
                         if (result.success) {
-                            // Swal.fire('¡Eliminado!', result.message, 'success')
                             notifi('¡Eliminado!', 'success')
                             // Recargar la lista de ventas después de la eliminación
                             const idCierre = cierreIdTitle.textContent
@@ -247,10 +338,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     })
     // Event listener para el botón de imprimir
     btnImprimirCierre.addEventListener('click', async function() {
-        // console.log(`La fecha del reporte es: ${fecha}`)
-        const idUsuario = tableTickets.dataset.iduser
-        // console.log(`El ID de usuario es: ${idUsuario}`)
         try {
+        // const idUsuario = tableTickets.dataset.iduser
             // Generar la fecha actual en formato 'd-m-y'
             const tableTickets = document.querySelector('.tableTickets')
             const idCierre = cierreIdTitle.textContent
@@ -273,75 +362,36 @@ document.addEventListener('DOMContentLoaded', async function() {
     })
     btnImprimirPdf.addEventListener('click', async function(){
         try {
-            const tableTickets = document.querySelector('.tableTickets')
-            const idCierre = cierreIdTitle.textContent
-            const fecha = tableTickets.dataset.fecha
+            // Buscar el elemento tableTickets dentro de ventasCierreList
+            const tableTickets = ventasCierreList.querySelector('.tableTickets');
+            if (!tableTickets) {
+                notifi('No hay datos de ventas para generar el PDF', 'error');
+                return;
+            }
+            const fecha = tableTickets.dataset.fecha;
             const idUsuario = tableTickets.dataset.iduser
-            // Obtén el ID de usuario, por ejemplo, de una variable de sesión global o un campo oculto
+            console.log('ID Usuario:', idUsuario, 'Fecha:', fecha);
             const response = await fetch(base_url + 'Estacion/generarReportePdf', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({idUser: idUsuario, fecha: fecha }) // <-- ¡Agrega el idUser aquí!
-            })
-            const result = await response.json()
+                body: JSON.stringify({idUser: idUsuario, fecha: fecha })
+            });
+            const result = await response.json();
             if (result.success) {
-                notifi('Generando PDF...', 'success')
-                // console.log(result.data.dataTotal)
-                fntGenerarPDF(result.data) 
+                notifi('Generando PDF...', 'success');
+                if (typeof fntGenerarPDF === 'function') {
+                    fntGenerarPDF(result.data);
+                } else {
+                    notifi('La función fntGenerarPDF no está definida', 'error');
+                }
             } else {
-                notifi(result.message, 'error')
+                notifi(result.message, 'error');
             }
         } catch (error) {
-            notifi('Error al generar el PDF de ventas.', 'error')
+            console.error('Error al generar PDF:', error);
+            notifi('Error al generar el PDF de ventas.', 'error');
         }
-    })
-    // funcion para generar el pdf
-    fntGenerarPDF = (reporteData) => {
-        // Verificar que los datos existan antes de enviarlos
-        if (reporteData) {
-            // Crear un formulario oculto
-            const form = document.createElement('form')
-            form.method = 'POST'
-            form.action = base_url + "data/reporte.php"
-            form.target = '_blank' // Abrir en una nueva pestaña
-            // Crear un input para los datos y asignarle el JSON
-            const input = document.createElement('input')
-            input.type = 'hidden'
-            input.name = 'reporteData'
-            input.value = JSON.stringify(reporteData)
-            // Agregar el input y el formulario al cuerpo del documento
-            form.appendChild(input)
-            document.body.appendChild(form)
-            // Enviar el formulario
-            form.submit()
-            // Limpiar el formulario después del envío
-            document.body.removeChild(form)
-        } else {
-            console.error("Error: Los datos para el PDF están incompletos.")
-        }
-    }
-    // La función ahora recibe el objeto de datos directamente
-    fntImprimirCierre = (dataCierre) => {
-        // Verificar que los datos de cierre existan antes de enviarlos
-        if (dataCierre) {
-            // Enviar los datos de cierre a la URL de impresión
-            $.ajax({
-                type: 'post',
-                cache: false,
-                url: base_url + "data/cierre.php",
-                data: { dataTicket: JSON.stringify(dataCierre) },
-                success: function (server) {
-                    console.log(server) // Imprime la respuesta del servidor
-                },
-                error: function(xhr) {
-                    console.error("Error al enviar los datos de cierre para impresión.")
-                }
-            })
-        } else {
-            notifi("Error: Los datos de cierre están incompletos.", 'error')
-            // console.error("Error: Los datos de cierre están incompletos.")
-        }
-    }
+    });
     /**
      * Función para cargar dinámicamente las fechas disponibles con ventas
      * y mostrar el total de litros vendidos al seleccionar una fecha
@@ -393,6 +443,8 @@ document.addEventListener('DOMContentLoaded', async function() {
             console.error('Error al cargar las fechas:', error)
             notifi('Error al cargar las fechas disponibles.', 'error')
         }
+        // Cargar ventas abiertas
+        await loadOpenSales()
     }
     /**
      * Función para cargar los litros vendidos en una fecha específica
