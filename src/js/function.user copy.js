@@ -139,19 +139,9 @@ $(document).ready(function() {
             $('#saveBtn').prop('disabled', false).html('Guardar Cambios')
         }
     })
-    // ===== FUNCIONES DE EDICIÓN Y ESTATUS EN LA TABLA DE USUARIOS =====
-    $(document).on('click', '.btn-edit', function() {
-        const userId = $(this).data('id')// Verifica si esto funciona ahora
-        editUser(userId)
-    })
-
-    $(document).on('click', '.btn-status', function() {
-        const userId = $(this).data('id')
-        const status = $(this).data('status')// Verifica si esto funciona ahora
-        changeUserStatus(userId, status)
-    })
     // ===== FUNCIONES DE CREACIÓN DE USUARIO =====
     loadSelectOptions()
+
     $('#userCreateForm').submit(async function(e) {
         e.preventDefault()
         if (!validateCreateForm()) return
@@ -171,7 +161,6 @@ $(document).ready(function() {
             if (result.success) {
                 $('#userCreateForm')[0].reset()
                 notifi('Usuario creado correctamente', 'success')
-                reloadUsuariosTable()
             } else {
                 notifi(result.message, 'error')
             }
@@ -217,7 +206,7 @@ async function saveImgUser(imageFile) {
         throw error
     }
 }
-async function changePasswordd(currentPassword, newPassword) {
+async function changePassword(currentPassword, newPassword) {
     try {
         const response = await fetch(base_url + "User/cambiarPassword/", {
             method: 'POST',
@@ -229,69 +218,13 @@ async function changePasswordd(currentPassword, newPassword) {
             })
         })
         if (!response.ok) throw new Error(`Error del servidor: ${response.status}`)
+        
         const objData = await response.json()
         if (!objData.success) throw new Error(objData.message || 'Error al cambiar la contraseña')
+        
         return objData
     } catch (error) {
         throw error
-    }
-}
-async function changePassword(currentPassword, newPassword) {
-    try {
-        const { isConfirmed } = await Swal.fire({
-            title: '¿Estás seguro?',
-            text: "¡Tu contraseña se cambiará de forma permanente!",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#3085d6',
-            cancelButtonColor: '#d33',
-            confirmButtonText: 'Sí, cambiarla',
-            cancelButtonText: 'Cancelar'
-        });
-
-        if (!isConfirmed) {
-            return { success: false, message: "Cambio de contraseña cancelado." };
-        }
-
-        const response = await fetch(base_url + "User/cambiarPassword/", {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                currentPassword: currentPassword,
-                newPassword: newPassword,
-                id_usuario: $('#user').val()
-            })
-        });
-
-        if (!response.ok) {
-            throw new Error('Error del servidor: ' + response.status);
-        }
-
-        const objData = await response.json();
-
-        if (objData.success) {
-            await Swal.fire({
-                title: '¡Contraseña cambiada!',
-                text: objData.message || 'La contraseña se ha actualizado correctamente.',
-                icon: 'success'
-            });
-            return objData;
-        } else {
-            await Swal.fire({
-                title: '¡Error!',
-                text: objData.message || 'Error al cambiar la contraseña.',
-                icon: 'error'
-            });
-            return objData;
-        }
-
-    } catch (error) {
-        await Swal.fire({
-            title: '¡Error Fatal!',
-            text: 'Ha ocurrido un error inesperado. Por favor, inténtalo de nuevo más tarde.',
-            icon: 'error'
-        });
-        throw error;
     }
 }
 function validateForm() {
@@ -334,9 +267,12 @@ async function updateUserData(formData) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(formData)
         })
+        
         if (!response.ok) throw new Error(`Error del servidor: ${response.status}`)
+        
         const objData = await response.json()
         if (!objData.success) throw new Error(objData.message || 'Error al actualizar los datos')
+        
         return objData
     } catch (error) {
         throw error
@@ -473,6 +409,17 @@ function initUsuariosTable() {
         lengthMenu: [5, 10, 25, 50],
         order: [[0, "desc"]],
         dom: '<"flex justify-between items-center mb-4"<"text-xl font-bold">f>rt<"flex justify-between items-center mt-4"lip>',
+        drawCallback: function() {
+            $('.btn-edit').off('click').on('click', function() {
+                const userId = $(this).data('id')
+                editUser(userId)
+            })
+            $('.btn-status').off('click').on('click', function() {
+                const userId = $(this).data('id')
+                const status = $(this).data('status')
+                toggleStatus(userId, status)
+            })
+        }
     })
 }
 function reloadUsuariosTable() {
@@ -484,6 +431,7 @@ async function editUser(userId) {
     try {
         const response = await fetch(base_url + "User/getUsuario/" + userId)
         const result = await response.json()
+        
         if (result.success) {
             showEditModal(result.usuario)
         } else {
@@ -641,28 +589,14 @@ async function saveUserChanges() {
         $('#saveEditBtn').prop('disabled', false).html('Guardar Cambios')
     }
 }
-async function changeUserStatus(userId, currentStatus) {
+async function toggleStatus(userId, currentStatus) {
     try {
-        const newStatus = currentStatus == 1 ? 0 : 1;
-        const actionText = newStatus == 1 ? 'activar' : 'desactivar';
-        const actionTitle = newStatus == 1 ? '¿Está seguro de activar este usuario?' : '¿Está seguro de desactivar este usuario?';
-        const actionColor = newStatus == 1 ? '#28a745' : '#dc3545';
-
-        const { isConfirmed } = await Swal.fire({
-            title: actionTitle,
-            text: `El estado del usuario cambiará a ${actionText}.`,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: actionColor,
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: `Sí, ${actionText}lo`,
-            cancelButtonText: 'Cancelar'
-        });
-
-        if (!isConfirmed) {
-            return;
-        }
-
+        const newStatus = currentStatus == 1 ? 0 : 1
+        const confirmMessage = newStatus == 1 
+            ? '¿Está seguro de activar este usuario?' 
+            : '¿Está seguro de desactivar este usuario?'
+        
+        if (!confirm(confirmMessage)) return
         const response = await fetch(base_url + "User/updateStatus/", {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -670,49 +604,16 @@ async function changeUserStatus(userId, currentStatus) {
                 usuario_id: userId,
                 usuario_status: newStatus
             })
-        });
-
-        const result = await response.json();
-
-        // --- Use a toast notification for success and error messages ---
+        })
+        const result = await response.json()
         if (result.success) {
-            Swal.fire({
-                toast: true,
-                position: 'top-end', // Position the toast in the top right corner
-                icon: 'success',
-                title: result.message || `El estado del usuario se ha ${actionText} correctamente.`,
-                showConfirmButton: false, // Don't show a button to close the toast
-                timer: 3000,
-                timerProgressBar: true,
-                didOpen: (toast) => {
-                    toast.addEventListener('mouseenter', Swal.stopTimer);
-                    toast.addEventListener('mouseleave', Swal.resumeTimer);
-                }
-            });
-            reloadUsuariosTable();
+            notifi('Estado actualizado correctamente', 'success')
+            reloadUsuariosTable()
         } else {
-            Swal.fire({
-                toast: true,
-                position: 'top-end',
-                icon: 'error',
-                title: result.message || 'Error al cambiar el estado del usuario.',
-                showConfirmButton: false,
-                timer: 3000,
-                timerProgressBar: true,
-                didOpen: (toast) => {
-                    toast.addEventListener('mouseenter', Swal.stopTimer);
-                    toast.addEventListener('mouseleave', Swal.resumeTimer);
-                }
-            });
+            notifi(result.message || 'Error al cambiar estado', 'error')
         }
-        // -----------------------------------------------------------------
-        
     } catch (error) {
-        console.error('Error:', error);
-        Swal.fire({
-            title: '¡Error!',
-            text: 'Ha ocurrido un error inesperado al procesar la solicitud.',
-            icon: 'error'
-        });
+        console.error('Error:', error)
+        notifi('Error al cambiar estado', 'error')
     }
 }

@@ -325,8 +325,8 @@ class User extends Controllers{
 		$data = [
 			'page_tag' => "Pagina principal",
 			'page_title' => "Pagina Principal",
-			'page_name' => "user/agregar",
-			'page_link' => "active-home",//activar el menu desplegable o un lin solo
+			'page_name' => "usuarios",
+			'page_link' => "agregar-usuario",//activar el menu desplegable o un lin solo
 			'page_functions' => "function.user.js"
 		];
 		$this->views->getViews($this, "newuser", $data);
@@ -482,7 +482,7 @@ class User extends Controllers{
 		echo json_encode($arrResponse, JSON_UNESCAPED_UNICODE);
 		die();
 	}
-/**** mostrar usuarios en tabla y sus acciones *******/
+	/**** mostrar usuarios en tabla y sus acciones *******/
 	// Obtener todos los usuarios para DataTable
 	public function getUsuarios() {
 		$arrResponse = array('success' => false, 'data' => array());
@@ -534,9 +534,7 @@ class User extends Controllers{
 		echo json_encode($arrResponse, JSON_UNESCAPED_UNICODE);
 		die();
 	}
-/**** fin mostrar usuarios en tabla y sus acciones *******/
-
-/**** fin mostrar usuarios en tabla y sus acciones *******/
+	/**** fin mostrar usuarios en tabla y sus acciones *******/
 	// Actualizar usuario
 	public function updateUsuario() {
 		$arrResponse = array('success' => false, 'message' => '');
