@@ -27,7 +27,7 @@ const LOAD = BASE_URL."system/core/Libraries/Load.php";
 const DB_HOST = "localhost";
 const DB_USER = "root";
 const DB_PASS = "";
-const DB_NAME = "combustible_db";
+const DB_NAME = "combustible_db1";
 // base de datos en la nube
 // const DB_HOST = "sql202.infinityfree.com";
 // const DB_USER = "if0_39962441";
