@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', function() {
         "dom": 'lfrtip',
         "language": {
             // Cambia la URL para que apunte a tu archivo local
-            "url": base_url + "src/plugins/js/datatable/es_es.json"
+            "url": base_url + "src/plugins/js/es_es.json"
         }
     })
     // Función para cargar los datos iniciales

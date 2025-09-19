@@ -70,11 +70,11 @@ document.addEventListener('DOMContentLoaded', async function() {
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">${sale.nombre} ${sale.apellido}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-200">${sale.fecha_venta}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-200">${parseFloat(sale.total_litros).toFixed(2)} L</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <button class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-full transition duration-300 close-sale-btn" data-fecha="${sale.fecha_venta}" data-iduser="${sale.id_user}">
+                    <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                        <button class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 transition duration-300 close-sale-btn" data-fecha="${sale.fecha_venta}" data-iduser="${sale.id_user}">
                             Cerrar Venta
                         </button>
-                        <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full transition duration-300 print-pdf-btn" data-id="${sale.id_cierre}" data-iduser="${sale.id_user}" data-fecha="${sale.fecha_venta}">
+                        <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 transition duration-300 print-pdf-btn" data-id="${sale.id_cierre}" data-iduser="${sale.id_user}" data-fecha="${sale.fecha_venta}">
                             Imprimir PDF
                         </button>
                     </td>
@@ -233,19 +233,12 @@ document.addEventListener('DOMContentLoaded', async function() {
         // Inicializar DataTable con configuración
         $('#cierresTable').DataTable({
             dom: '<"flex justify-between items-center mb-4"<"flex"l><"flex"f>><"bg-white dark:bg-gray-800 rounded-lg"rt><"flex justify-between items-center mt-4"<"flex"i><"flex"p>>',
-            language: {
-                search: "Buscar:",
-                lengthMenu: "Mostrar _MENU_ registros",
-                info: "Mostrando _START_ a _END_ de _TOTAL_ registros",
-                infoEmpty: "Mostrando 0 a 0 de 0 registros",
-                infoFiltered: "(filtrado de _MAX_ registros totales)",
-                paginate: {
-                    first: "Primero",
-                    previous: "Anterior",
-                    next: "Siguiente",
-                    last: "Último"
-                }
+            "language": {
+            // Cambia la URL para que apunte a tu archivo local
+            "url": base_url + "src/plugins/js/es_es.json"
             },
+            responsive: true,
+            autoWidth: false,
             pageLength: 10,
             lengthMenu: [5, 10, 25, 50],
             order: [[3, 'desc']], // Ordenar por fecha (columna 4) descendente
