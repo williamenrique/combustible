@@ -632,4 +632,176 @@ class User extends Controllers{
 		];
 		$this->views->getViews($this, "usuarios", $data);
 	}
+
+	/*****
+	vista de departamentos
+	*****/
+	public function departamentos(){
+
+        $data = [
+            'page_tag' => "Departamentos",
+            'page_title' => "Gestión de Departamentos",
+            'page_name' => "departamentos",
+            'page_link' => "departamentos",
+            'page_functions' => "function.departamentos.js"
+        ];
+        $this->views->getViews($this, "departamentos", $data);
+    }
+
+    public function getDepartamentos() {
+        $arrData = $this->model->selectDepartamentos();
+        for ($i=0; $i < count($arrData); $i++) {
+            $status = $arrData[$i]['departamento_status'] == 1 
+                ? '<span class="badge badge-success">Activo</span>' 
+                : '<span class="badge badge-danger">Inactivo</span>';
+            $arrData[$i]['departamento_status'] = $status;
+
+            $btnEdit = '<button class="px-2 py-1 bg-blue-500 text-white text-xs rounded-md hover:bg-blue-600" onClick="fntEditDepto('.$arrData[$i]['departamento_id'].')" title="Editar"><i class="fas fa-pencil-alt"></i></button>';
+            $btnDelete = '<button class="px-2 py-1 bg-red-500 text-white text-xs rounded-md hover:bg-red-600" onClick="fntDelDepto('.$arrData[$i]['departamento_id'].')" title="Eliminar"><i class="far fa-trash-alt"></i></button>';
+            $arrData[$i]['acciones'] = '<div class="text-center">' . $btnEdit . ' ' . $btnDelete . '</div>';
+        }
+        echo json_encode($arrData, JSON_UNESCAPED_UNICODE);
+        die();
+    }
+
+    public function getDepartamento(int $iddepto) {
+        $iddepto = intval($iddepto);
+        if ($iddepto > 0) {
+            $arrData = $this->model->selectDepartamento($iddepto);
+            if (empty($arrData)) {
+                $arrResponse = ['success' => false, 'message' => 'Datos no encontrados.'];
+            } else {
+                $arrResponse = ['success' => true, 'data' => $arrData];
+            }
+            echo json_encode($arrResponse, JSON_UNESCAPED_UNICODE);
+        }
+        die();
+    }
+
+    public function setDepartamento() {
+        if ($_POST) {
+            $idDepto = intval($_POST['idDepartamento']);
+            $nombre = strClean($_POST['txtNombre']);
+            $descripcion = strClean($_POST['txtDescripcion']);
+            $status = intval($_POST['listStatus']);
+
+            if ($idDepto == 0) {
+                // Crear
+                $request_depto = $this->model->insertDepartamento($nombre, $descripcion, $status);
+                $option = 1;
+            } else {
+                // Actualizar
+                $request_depto = $this->model->updateDepartamento($idDepto, $nombre, $descripcion, $status);
+                $option = 2;
+            }
+
+            if (intval($request_depto) > 0) {
+                if ($option == 1) {
+                    $arrResponse = ['success' => true, 'message' => 'Departamento guardado correctamente.'];
+                } else {
+                    $arrResponse = ['success' => true, 'message' => 'Departamento actualizado correctamente.'];
+                }
+            } else if ($request_depto == 'exist') {
+                $arrResponse = ['success' => false, 'message' => '¡Atención! El departamento ya existe.'];
+            } else {
+                $arrResponse = ['success' => false, 'message' => 'No es posible almacenar los datos.'];
+            }
+            echo json_encode($arrResponse, JSON_UNESCAPED_UNICODE);
+        }
+        die();
+    }
+
+    public function delDepartamento() {
+        if ($_POST) {
+            $idDepto = intval($_POST['idDepartamento']);
+            $requestDelete = $this->model->deleteDepartamento($idDepto);
+            if ($requestDelete == 'in_use') {
+                $arrResponse = ['success' => false, 'message' => 'No se puede eliminar. El departamento está asignado a uno o más usuarios.'];
+            } else if ($requestDelete) {
+                $arrResponse = ['success' => true, 'message' => 'Se ha eliminado el departamento.'];
+            } else {
+                $arrResponse = ['success' => false, 'message' => 'Error al eliminar el departamento.'];
+            }
+            echo json_encode($arrResponse, JSON_UNESCAPED_UNICODE);
+        }
+        die();
+    }
+
+    /*****
+	* CRUD de Roles
+	*****/
+    public function getRolesForTable() {
+        $arrData = $this->model->selectRoles();
+        for ($i=0; $i < count($arrData); $i++) {
+            $status = $arrData[$i]['rol_status'] == 1 
+                ? '<span class="badge badge-success">Activo</span>' 
+                : '<span class="badge badge-danger">Inactivo</span>';
+            $arrData[$i]['rol_status'] = $status;
+
+            $btnEdit = '<button class="px-2 py-1 bg-blue-500 text-white text-xs rounded-md hover:bg-blue-600" onClick="fntEditRol('.$arrData[$i]['rol_id'].')" title="Editar"><i class="fas fa-pencil-alt"></i></button>';
+            $btnDelete = '<button class="px-2 py-1 bg-red-500 text-white text-xs rounded-md hover:bg-red-600" onClick="fntDelRol('.$arrData[$i]['rol_id'].')" title="Eliminar"><i class="far fa-trash-alt"></i></button>';
+            $arrData[$i]['acciones'] = '<div class="text-center">' . $btnEdit . ' ' . $btnDelete . '</div>';
+        }
+        echo json_encode($arrData, JSON_UNESCAPED_UNICODE);
+        die();
+    }
+
+    public function getRol(int $idrol) {
+        $idrol = intval($idrol);
+        if ($idrol > 0) {
+            $arrData = $this->model->selectRol($idrol);
+            if (empty($arrData)) {
+                $arrResponse = ['success' => false, 'message' => 'Datos no encontrados.'];
+            } else {
+                $arrResponse = ['success' => true, 'data' => $arrData];
+            }
+            echo json_encode($arrResponse, JSON_UNESCAPED_UNICODE);
+        }
+        die();
+    }
+
+    public function setRol() {
+        if ($_POST) {
+            $idRol = intval($_POST['idRol']);
+            $nombre = strClean($_POST['txtNombre']);
+            $descripcion = strClean($_POST['txtDescripcion']);
+            $status = intval($_POST['listStatus']);
+
+            if ($idRol == 0) {
+                $request_rol = $this->model->insertRol($nombre, $descripcion, $status);
+                $option = 1;
+            } else {
+                $request_rol = $this->model->updateRol($idRol, $nombre, $descripcion, $status);
+                $option = 2;
+            }
+
+            if (intval($request_rol) > 0) {
+                $arrResponse = ($option == 1) 
+                    ? ['success' => true, 'message' => 'Rol guardado correctamente.'] 
+                    : ['success' => true, 'message' => 'Rol actualizado correctamente.'];
+            } else if ($request_rol == 'exist') {
+                $arrResponse = ['success' => false, 'message' => '¡Atención! El rol ya existe.'];
+            } else {
+                $arrResponse = ['success' => false, 'message' => 'No es posible almacenar los datos.'];
+            }
+            echo json_encode($arrResponse, JSON_UNESCAPED_UNICODE);
+        }
+        die();
+    }
+
+    public function delRol() {
+        if ($_POST) {
+            $idRol = intval($_POST['idRol']);
+            $requestDelete = $this->model->deleteRol($idRol);
+            if ($requestDelete == 'in_use') {
+                $arrResponse = ['success' => false, 'message' => 'No se puede eliminar. El rol está asignado a uno o más usuarios.'];
+            } else if ($requestDelete) {
+                $arrResponse = ['success' => true, 'message' => 'Se ha eliminado el rol.'];
+            } else {
+                $arrResponse = ['success' => false, 'message' => 'Error al eliminar el rol.'];
+            }
+            echo json_encode($arrResponse, JSON_UNESCAPED_UNICODE);
+        }
+        die();
+    }
 }

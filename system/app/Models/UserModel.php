@@ -178,4 +178,96 @@ class UserModel extends Mysql {
         $sql = "UPDATE {$this->tablaUsuarios} SET usuario_status = ? WHERE usuario_id = ?";
         return $this->update($sql, [$status, $idUsuario]);
     }
+    /**********
+     * metodos para departamentos en usuarios
+     */
+    public function selectDepartamentos() {
+        $sql = "SELECT * FROM table_departamentos WHERE departamento_status != 2"; // 2 = eliminado
+        return $this->select_all($sql);
+    }
+
+    public function selectDepartamento(int $iddepto) {
+        $sql = "SELECT * FROM table_departamentos WHERE departamento_id = ?";
+        return $this->select($sql, [$iddepto]);
+    }
+
+    public function insertDepartamento(string $nombre, string $descripcion, int $status) {
+        $return = 0;
+        $sql = "SELECT * FROM table_departamentos WHERE departamento_nombre = ?";
+        $request = $this->select_all($sql, [$nombre]);
+
+        if (empty($request)) {
+            $query_insert = "INSERT INTO table_departamentos(departamento_nombre, departamento_descripcion, departamento_status) VALUES(?,?,?)";
+            $arrData = [$nombre, $descripcion, $status];
+            $request_insert = $this->insert($query_insert, $arrData);
+            $return = $request_insert;
+        } else {
+            $return = "exist";
+        }
+        return $return;
+    }
+
+    public function updateDepartamento(int $iddepto, string $nombre, string $descripcion, int $status) {
+        $sql = "UPDATE table_departamentos SET departamento_nombre = ?, departamento_descripcion = ?, departamento_status = ? WHERE departamento_id = ?";
+        $arrData = [$nombre, $descripcion, $status, $iddepto];
+        return $this->update($sql, $arrData);
+    }
+
+    public function deleteDepartamento(int $iddepto) {
+        $sql_check = "SELECT COUNT(*) as total FROM table_usuarios WHERE usuario_departamento_id = ? AND usuario_status = 1";
+        $request_check = $this->select($sql_check, [$iddepto]);
+
+        if(isset($request_check['total']) && $request_check['total'] > 0){
+            return 'in_use';
+        }
+
+        // Eliminación lógica
+        $sql = "UPDATE table_departamentos SET departamento_status = 0 WHERE departamento_id = ?";
+        return $this->update($sql, [$iddepto]);
+    }
+
+    /*****
+	* CRUD de Roles
+	*****/
+    public function selectRoles() {
+        $sql = "SELECT * FROM table_roles WHERE rol_status != 2"; // 2 = eliminado
+        return $this->select_all($sql);
+    }
+
+    public function selectRol(int $idrol) {
+        $sql = "SELECT * FROM table_roles WHERE rol_id = ?";
+        return $this->select($sql, [$idrol]);
+    }
+
+    public function insertRol(string $nombre, string $descripcion, int $status) {
+        $return = 0;
+        $sql = "SELECT * FROM table_roles WHERE rol_nombre = ?";
+        $request = $this->select_all($sql, [$nombre]);
+
+        if (empty($request)) {
+            $query_insert = "INSERT INTO table_roles(rol_nombre, rol_descripcion, rol_status) VALUES(?,?,?)";
+            $arrData = [$nombre, $descripcion, $status];
+            $request_insert = $this->insert($query_insert, $arrData);
+            $return = $request_insert;
+        } else {
+            $return = "exist";
+        }
+        return $return;
+    }
+
+    public function updateRol(int $idrol, string $nombre, string $descripcion, int $status) {
+        $sql = "UPDATE table_roles SET rol_nombre = ?, rol_descripcion = ?, rol_status = ? WHERE rol_id = ?";
+        $arrData = [$nombre, $descripcion, $status, $idrol];
+        return $this->update($sql, $arrData);
+    }
+
+    public function deleteRol(int $idrol) {
+        $sql_check = "SELECT COUNT(*) as total FROM table_usuarios WHERE usuario_rol_id = ? AND usuario_status = 1";
+        $request_check = $this->select($sql_check, [$idrol]);
+        if(isset($request_check['total']) && $request_check['total'] > 0){
+            return 'in_use';
+        }
+        $sql = "UPDATE table_roles SET rol_status = 0 WHERE rol_id = ?";
+        return $this->update($sql, [$idrol]);
+    }
 }
