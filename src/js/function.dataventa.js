@@ -223,6 +223,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         // Inicializar DataTables después de renderizar la tabla
         initializeDataTable();
     }
+
     function initializeDataTable() {
         // Destruir DataTable si ya existe
         if ($.fn.DataTable.isDataTable('#cierresTable')) {
